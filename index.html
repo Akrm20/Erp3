@@ -3,1024 +3,415 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>نظام إدارة التراخيص - المولد</title>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <title>مولد وإدارة التراخيص</title>
+    <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        :root {
-            --primary-color: #2c3e50;
-            --secondary-color: #3498db;
-            --success-color: #27ae60;
-            --warning-color: #f39c12;
-            --danger-color: #e74c3c;
-            --light-color: #ecf0f1;
-            --dark-color: #34495e;
-            --sidebar-width: 260px;
-        }
-        
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-        }
-        
+        /* خط إنتر (Inter) كخط افتراضي عربي/إنجليزي */
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap');
         body {
-            background-color: #f5f7fa;
-            color: #333;
-            display: flex;
-            min-height: 100vh;
+            font-family: 'Inter', sans-serif;
+            background-color: #f8fafc; /* خلفية فاتحة جدًا */
         }
-        
-        /* الشريط الجانبي */
-        .sidebar {
-            width: var(--sidebar-width);
-            background: linear-gradient(180deg, var(--primary-color) 0%, var(--dark-color) 100%);
-            color: white;
-            height: 100vh;
-            position: fixed;
-            padding: 20px 0;
-            box-shadow: 0 0 15px rgba(0, 0, 0, 0.1);
-            z-index: 100;
-        }
-        
-        .logo {
-            text-align: center;
-            padding: 20px 15px;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-            margin-bottom: 20px;
-        }
-        
-        .logo h1 {
-            font-size: 22px;
-            margin-bottom: 5px;
-        }
-        
-        .logo p {
-            font-size: 14px;
-            opacity: 0.8;
-        }
-        
-        .nav-links {
-            list-style: none;
-            padding: 0 15px;
-        }
-        
-        .nav-links li {
-            margin-bottom: 5px;
-        }
-        
-        .nav-links a {
-            display: flex;
-            align-items: center;
-            padding: 12px 15px;
-            color: white;
-            text-decoration: none;
-            border-radius: 5px;
-            transition: all 0.3s;
-        }
-        
-        .nav-links a i {
-            margin-left: 10px;
-            font-size: 18px;
-        }
-        
-        .nav-links a:hover, .nav-links a.active {
-            background-color: rgba(255, 255, 255, 0.1);
-        }
-        
-        /* المحتوى الرئيسي */
-        .main-content {
-            flex: 1;
-            margin-right: var(--sidebar-width);
-            padding: 30px;
-        }
-        
-        .header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 30px;
-            padding-bottom: 15px;
-            border-bottom: 1px solid #e0e0e0;
-        }
-        
-        .header h2 {
-            color: var(--primary-color);
-            font-size: 24px;
-        }
-        
-        .stats {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 20px;
-            margin-bottom: 30px;
-        }
-        
-        .stat-card {
-            background: white;
-            border-radius: 10px;
+        .container {
+            max-width: 1200px;
+            margin: 20px auto;
             padding: 20px;
-            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
-            display: flex;
-            align-items: center;
+            background-color: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
         }
-        
-        .stat-icon {
-            width: 60px;
-            height: 60px;
-            border-radius: 10px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            margin-left: 15px;
-            font-size: 24px;
-        }
-        
-        .stat-icon.primary {
-            background-color: rgba(52, 152, 219, 0.2);
-            color: var(--secondary-color);
-        }
-        
-        .stat-icon.success {
-            background-color: rgba(39, 174, 96, 0.2);
-            color: var(--success-color);
-        }
-        
-        .stat-icon.warning {
-            background-color: rgba(243, 156, 18, 0.2);
-            color: var(--warning-color);
-        }
-        
-        .stat-info h3 {
-            font-size: 28px;
-            margin-bottom: 5px;
-        }
-        
-        .stat-info p {
-            color: #7f8c8d;
-            font-size: 14px;
-        }
-        
-        .card {
-            background: white;
-            border-radius: 10px;
-            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
-            margin-bottom: 30px;
-            overflow: hidden;
-        }
-        
-        .card-header {
-            padding: 20px;
-            border-bottom: 1px solid #e0e0e0;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-        
-        .card-header h3 {
-            color: var(--primary-color);
-            font-size: 18px;
-        }
-        
-        .card-body {
-            padding: 20px;
-        }
-        
-        .form-group {
-            margin-bottom: 20px;
-        }
-        
-        .form-group label {
-            display: block;
-            margin-bottom: 8px;
-            font-weight: 500;
-            color: var(--dark-color);
-        }
-        
-        .form-control {
-            width: 100%;
-            padding: 12px 15px;
-            border: 1px solid #ddd;
-            border-radius: 5px;
-            font-size: 16px;
-            transition: border-color 0.3s;
-        }
-        
-        .form-control:focus {
-            border-color: var(--secondary-color);
-            outline: none;
-        }
-        
-        .btn {
-            padding: 12px 25px;
-            border: none;
-            border-radius: 5px;
-            font-size: 16px;
-            cursor: pointer;
-            transition: all 0.3s;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-        }
-        
-        .btn i {
-            margin-left: 8px;
-        }
-        
-        .btn-primary {
-            background-color: var(--secondary-color);
-            color: white;
-        }
-        
-        .btn-primary:hover {
-            background-color: #2980b9;
-        }
-        
-        .btn-success {
-            background-color: var(--success-color);
-            color: white;
-        }
-        
-        .btn-success:hover {
-            background-color: #219653;
-        }
-        
-        .btn-warning {
-            background-color: var(--warning-color);
-            color: white;
-        }
-        
-        .btn-warning:hover {
-            background-color: #e67e22;
-        }
-        
-        .table-responsive {
-            overflow-x: auto;
-        }
-        
-        table {
-            width: 100%;
-            border-collapse: collapse;
-        }
-        
-        table th, table td {
-            padding: 12px 15px;
-            text-align: right;
-            border-bottom: 1px solid #e0e0e0;
-        }
-        
-        table th {
-            background-color: #f8f9fa;
-            color: var(--primary-color);
-            font-weight: 600;
-        }
-        
-        table tr:hover {
-            background-color: #f8f9fa;
-        }
-        
-        .badge {
-            display: inline-block;
-            padding: 5px 10px;
-            border-radius: 20px;
-            font-size: 12px;
-            font-weight: 600;
-        }
-        
-        .badge-success {
-            background-color: rgba(39, 174, 96, 0.1);
-            color: var(--success-color);
-        }
-        
-        .badge-warning {
-            background-color: rgba(243, 156, 18, 0.1);
-            color: var(--warning-color);
-        }
-        
-        .badge-danger {
-            background-color: rgba(231, 76, 60, 0.1);
-            color: var(--danger-color);
-        }
-        
-        .actions {
-            display: flex;
-            gap: 5px;
-        }
-        
-        .action-btn {
-            width: 35px;
-            height: 35px;
-            border-radius: 5px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
-            transition: all 0.3s;
-        }
-        
-        .action-btn.edit {
-            background-color: rgba(52, 152, 219, 0.1);
-            color: var(--secondary-color);
-        }
-        
-        .action-btn.delete {
-            background-color: rgba(231, 76, 60, 0.1);
-            color: var(--danger-color);
-        }
-        
-        .action-btn:hover {
-            transform: translateY(-2px);
-        }
-        
-        .modal {
-            display: none;
-            position: fixed;
-            top: 0;
-            right: 0;
-            bottom: 0;
-            left: 0;
-            background-color: rgba(0, 0, 0, 0.5);
-            z-index: 1000;
-            align-items: center;
-            justify-content: center;
-        }
-        
-        .modal-content {
-            background: white;
-            border-radius: 10px;
-            width: 90%;
-            max-width: 500px;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
-            overflow: hidden;
-        }
-        
-        .modal-header {
-            padding: 20px;
-            border-bottom: 1px solid #e0e0e0;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-        
-        .modal-header h3 {
-            color: var(--primary-color);
-        }
-        
-        .close {
-            background: none;
-            border: none;
-            font-size: 24px;
-            cursor: pointer;
-            color: #7f8c8d;
-        }
-        
-        .modal-body {
-            padding: 20px;
-        }
-        
-        .modal-footer {
-            padding: 20px;
-            border-top: 1px solid #e0e0e0;
-            display: flex;
-            justify-content: flex-end;
-            gap: 10px;
-        }
-        
-        .license-preview {
-            background: #f8f9fa;
-            border-radius: 5px;
-            padding: 15px;
-            margin-top: 15px;
-            font-family: monospace;
+        .json-output {
+            background-color: #f0f4f8;
+            border: 1px solid #cbd5e1;
+            min-height: 150px;
+            max-height: 400px;
+            overflow: auto;
             white-space: pre-wrap;
-            display: none;
+            word-wrap: break-word;
+            font-family: monospace;
+            direction: ltr; /* JSON يكون أفضل بالاتجاه من اليسار لليمين */
+            text-align: left;
         }
-        
-        .alert {
-            padding: 15px;
-            border-radius: 5px;
-            margin-bottom: 20px;
-            display: none;
-        }
-        
-        .alert-success {
-            background-color: rgba(39, 174, 96, 0.1);
-            color: var(--success-color);
-            border: 1px solid rgba(39, 174, 96, 0.2);
-        }
-        
-        .alert-danger {
-            background-color: rgba(231, 76, 60, 0.1);
-            color: var(--danger-color);
-            border: 1px solid rgba(231, 76, 60, 0.2);
-        }
-        
-        @media (max-width: 992px) {
-            .sidebar {
-                width: 70px;
-                overflow: hidden;
-            }
-            
-            .logo h1, .logo p, .nav-links span {
-                display: none;
-            }
-            
-            .nav-links a {
-                justify-content: center;
-                padding: 15px;
-            }
-            
-            .nav-links a i {
-                margin-left: 0;
-            }
-            
-            .main-content {
-                margin-right: 70px;
-            }
-        }
-        
+        /* تصميم الجدول ليتناسب مع الهاتف */
         @media (max-width: 768px) {
-            .main-content {
-                padding: 15px;
+            .license-table thead { display: none; }
+            .license-table, .license-table tbody, .license-table tr, .license-table td { display: block; width: 100%; }
+            .license-table tr { 
+                margin-bottom: 10px; 
+                border: 1px solid #e2e8f0; 
+                border-radius: 8px;
+                padding: 10px;
             }
-            
-            .stats {
-                grid-template-columns: 1fr;
+            .license-table td { 
+                text-align: right; 
+                padding: 8px 0;
+                border-bottom: 1px solid #f1f5f9;
+                position: relative;
+                padding-right: 50%; /* مساحة لاسم العمود */
             }
-            
-            .header {
-                flex-direction: column;
-                align-items: flex-start;
+            .license-table td::before {
+                content: attr(data-label);
+                position: absolute;
+                right: 10px;
+                width: 45%;
+                padding-left: 10px;
+                font-weight: 600;
+                text-align: left;
+                color: #475569;
             }
-            
-            .header-actions {
-                margin-top: 15px;
-                width: 100%;
-            }
+            .license-table td:last-child { border-bottom: none; }
         }
     </style>
 </head>
-<body>
-    <!-- الشريط الجانبي -->
-    <div class="sidebar">
-        <div class="logo">
-            <h1>نظام التراخيص</h1>
-            <p>لوحة التحكم الرئيسية</p>
-        </div>
-        
-        <ul class="nav-links">
-            <li>
-                <a href="#" class="active">
-                    <i class="fas fa-home"></i>
-                    <span>الرئيسية</span>
-                </a>
-            </li>
-            <li>
-                <a href="#">
-                    <i class="fas fa-key"></i>
-                    <span>إدارة التراخيص</span>
-                </a>
-            </li>
-            <li>
-                <a href="#">
-                    <i class="fas fa-users"></i>
-                    <span>العملاء</span>
-                </a>
-            </li>
-            <li>
-                <a href="#">
-                    <i class="fas fa-chart-bar"></i>
-                    <span>التقارير</span>
-                </a>
-            </li>
-            <li>
-                <a href="#">
-                    <i class="fas fa-cog"></i>
-                    <span>الإعدادات</span>
-                </a>
-            </li>
-        </ul>
-    </div>
-    
-    <!-- المحتوى الرئيسي -->
-    <div class="main-content">
-        <div class="header">
-            <h2>لوحة تحكم مولد التراخيص</h2>
-            <div class="header-actions">
-                <button class="btn btn-primary" id="generateLicenseBtn">
-                    <i class="fas fa-plus"></i> إنشاء ترخيص جديد
+<body class="p-4 md:p-8">
+
+    <div class="container">
+        <header class="text-center mb-10 border-b pb-4">
+            <h1 class="text-4xl font-extrabold text-gray-900 mb-2">لوحة تحكم Micro-ERP</h1>
+            <p class="text-lg text-gray-600">مولد وتتبع أكواد التراخيص المحلية</p>
+        </header>
+
+        <!-- قسم التوليد وتكوين JSON -->
+        <div class="grid lg:grid-cols-2 gap-8 mb-12">
+            
+            <!-- لوحة التحكم بالمدخلات -->
+            <div class="p-6 bg-indigo-50 rounded-xl shadow-lg border border-indigo-100">
+                <h2 class="text-2xl font-bold text-indigo-700 mb-6 border-b pb-3">تكوين ترخيص جديد</h2>
+
+                <!-- حقل كود الترخيص -->
+                <div class="mb-5">
+                    <label for="licenseCode" class="block text-sm font-medium text-gray-700 mb-2">كود الترخيص المُولّد</label>
+                    <div class="flex flex-col sm:flex-row gap-3">
+                        <input type="text" id="licenseCode" 
+                               class="flex-1 p-3 border border-gray-300 rounded-lg text-left tracking-widest font-bold text-gray-800 focus:ring-indigo-500 focus:border-indigo-500 transition" 
+                               placeholder="انقر على توليد">
+                        <button type="button" id="generateBtn"
+                                class="bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-3 px-4 rounded-lg transition duration-200 shadow-md">
+                            توليد عشوائي
+                        </button>
+                    </div>
+                </div>
+
+                <!-- حقل الصلاحية -->
+                <div class="mb-6">
+                    <label for="expiryDays" class="block text-sm font-medium text-gray-700 mb-2">مدة الصلاحية (بالأيام)</label>
+                    <input type="number" id="expiryDays" value="365" min="1" max="10000"
+                           class="w-full p-3 border border-gray-300 rounded-lg text-left focus:ring-indigo-500 focus:border-indigo-500">
+                    <p class="text-xs text-gray-500 mt-1">يحدد هذا القيمة التي سيحفظها المشروع الثاني في localStorage.</p>
+                </div>
+                
+                <!-- زر تكوين JSON -->
+                <button type="button" id="buildJsonBtn"
+                        class="w-full bg-green-600 hover:bg-green-700 text-white font-semibold py-3 rounded-xl transition duration-300 shadow-xl">
+                    تكوين ملف JSON وحفظه محليًا
                 </button>
             </div>
-        </div>
-        
-        <div class="alert alert-success" id="successAlert">
-            <i class="fas fa-check-circle"></i> تم إنشاء الترخيص بنجاح!
-        </div>
-        
-        <div class="alert alert-danger" id="errorAlert">
-            <i class="fas fa-exclamation-circle"></i> حدث خطأ أثناء إنشاء الترخيص!
-        </div>
-        
-        <div class="stats">
-            <div class="stat-card">
-                <div class="stat-icon primary">
-                    <i class="fas fa-key"></i>
-                </div>
-                <div class="stat-info">
-                    <h3 id="totalLicenses">0</h3>
-                    <p>إجمالي التراخيص</p>
-                </div>
-            </div>
-            
-            <div class="stat-card">
-                <div class="stat-icon success">
-                    <i class="fas fa-check-circle"></i>
-                </div>
-                <div class="stat-info">
-                    <h3 id="activeLicenses">0</h3>
-                    <p>التراخيص النشطة</p>
-                </div>
-            </div>
-            
-            <div class="stat-card">
-                <div class="stat-icon warning">
-                    <i class="fas fa-clock"></i>
-                </div>
-                <div class="stat-info">
-                    <h3 id="expiredLicenses">0</h3>
-                    <p>التراخيص المنتهية</p>
-                </div>
-            </div>
-        </div>
-        
-        <div class="card">
-            <div class="card-header">
-                <h3>إنشاء ترخيص جديد</h3>
-            </div>
-            <div class="card-body">
-                <form id="licenseForm">
-                    <div class="form-group">
-                        <label for="licenseCode">كود الترخيص</label>
-                        <div style="display: flex; gap: 10px;">
-                            <input type="text" id="licenseCode" class="form-control" placeholderسيتم إنشاء الكود تلقائياً" readonly>
-                            <button type="button" class="btn btn-warning" id="generateCodeBtn">
-                                <i class="fas fa-sync-alt"></i> توليد
-                            </button>
-                        </div>
-                    </div>
-                    
-                    <div class="form-group">
-                        <label for="customerName">اسم العميل</label>
-                        <input type="text" id="customerName" class="form-control" placeholder="أدخل اسم العميل">
-                    </div>
-                    
-                    <div class="form-group">
-                        <label for="customerEmail">البريد الإلكتروني للعميل</label>
-                        <input type="email" id="customerEmail" class="form-control" placeholder="أدخل البريد الإلكتروني">
-                    </div>
-                    
-                    <div class="form-group">
-                        <label for="licenseType">نوع الترخيص</label>
-                        <select id="licenseType" class="form-control">
-                            <option value="basic">أساسي (سنة واحدة)</option>
-                            <option value="professional">احترافي (سنتين)</option>
-                            <option value="enterprise">مؤسسي (3 سنوات)</option>
-                        </select>
-                    </div>
-                    
-                    <div class="form-group">
-                        <label for="expiryDate">تاريخ الانتهاء</label>
-                        <input type="date" id="expiryDate" class="form-control">
-                    </div>
-                    
-                    <div class="form-group">
-                        <label for="notes">ملاحظات إضافية</label>
-                        <textarea id="notes" class="form-control" rows="3" placeholder="أي ملاحظات إضافية حول الترخيص"></textarea>
-                    </div>
-                    
-                    <button type="submit" class="btn btn-success">
-                        <i class="fas fa-save"></i> حفظ الترخيص وإنشاء ملف JSON
+
+            <!-- لوحة عرض الكود JSON -->
+            <div class="p-6 bg-white rounded-xl shadow-lg border border-gray-200">
+                <h2 class="text-2xl font-bold text-gray-700 mb-6 border-b pb-3">محتوى ملف JSON جاهز للنسخ</h2>
+
+                <p id="fileNameDisplay" class="text-lg font-semibold text-gray-800 mb-3 hidden">
+                    اسم الملف المطلوب: <span id="fileName" class="text-indigo-600"></span>.json
+                </p>
+
+                <pre id="jsonOutput" class="json-output p-4 rounded-lg text-sm text-gray-800">
+(قم بتوليد الكود لتكوين محتوى JSON هنا)
+                </pre>
+                
+                <div id="copyStatusMessage" class="hidden text-center mt-3 text-sm font-medium p-2 rounded-lg"></div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4">
+                    <button type="button" id="copyJsonBtn" disabled
+                            class="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 rounded-lg transition duration-200 disabled:opacity-50">
+                        نسخ محتوى JSON
                     </button>
-                    
-                    <div class="license-preview" id="licensePreview"></div>
-                </form>
-            </div>
-        </div>
-        
-        <div class="card">
-            <div class="card-header">
-                <h3>التراخيص المُنشأة</h3>
-            </div>
-            <div class="card-body">
-                <div class="table-responsive">
-                    <table id="licensesTable">
-                        <thead>
-                            <tr>
-                                <th>كود الترخيص</th>
-                                <th>العميل</th>
-                                <th>النوع</th>
-                                <th>تاريخ الإنشاء</th>
-                                <th>تاريخ الانتهاء</th>
-                                <th>الحالة</th>
-                                <th>الإجراءات</th>
-                            </tr>
-                        </thead>
-                        <tbody id="licensesTableBody">
-                            <!-- سيتم ملء الجدول ديناميكياً -->
-                        </tbody>
-                    </table>
+                    <button type="button" id="copyFileNameBtn" disabled
+                            class="bg-gray-400 hover:bg-gray-500 text-white font-semibold py-3 rounded-lg transition duration-200 disabled:opacity-50">
+                        نسخ اسم الملف
+                    </button>
                 </div>
             </div>
         </div>
-    </div>
-    
-    <!-- نافذة عرض الترخيص -->
-    <div class="modal" id="licenseModal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h3>تفاصيل الترخيص</h3>
-                <button class="close" id="closeModal">&times;</button>
-            </div>
-            <div class="modal-body">
-                <div id="modalLicenseDetails">
-                    <!-- سيتم ملء التفاصيل هنا -->
-                </div>
-            </div>
-            <div class="modal-footer">
-                <button class="btn btn-primary" id="downloadJsonBtn">
-                    <i class="fas fa-download"></i> تحميل ملف JSON
+
+        <!-- قسم لوحة تحكم التراخيص (المحفوظة محليًا) -->
+        <div class="mt-12 p-6 bg-gray-50 rounded-xl shadow-lg border border-gray-200">
+            <div class="flex justify-between items-center mb-6 border-b pb-3">
+                <h2 class="text-2xl font-bold text-gray-800">لوحة تتبع التراخيص</h2>
+                <button id="clearLicensesBtn" class="text-sm text-red-600 hover:text-red-800 font-medium">
+                    مسح كل التراخيص المحلية (للتجربة)
                 </button>
-                <button class="btn" id="closeModalBtn">إغلاق</button>
+            </div>
+
+            <!-- جدول عرض التراخيص -->
+            <div id="licensesTableContainer" class="overflow-x-auto">
+                <table class="w-full text-sm text-right text-gray-500 license-table">
+                    <thead class="text-xs text-gray-700 uppercase bg-gray-200 rounded-lg">
+                        <tr>
+                            <th scope="col" class="px-6 py-3 text-center">كود الترخيص</th>
+                            <th scope="col" class="px-6 py-3">الصلاحية (أيام)</th>
+                            <th scope="col" class="px-6 py-3">تاريخ التوليد</th>
+                            <th scope="col" class="px-6 py-3">اسم ملف JSON</th>
+                        </tr>
+                    </thead>
+                    <tbody id="licensesTableBody">
+                        <!-- تُعرض هنا الأكواد من localStorage -->
+                        <tr>
+                            <td colspan="4" class="text-center py-4 text-gray-500">لا توجد تراخيص محفوظة محلياً.</td>
+                        </tr>
+                    </tbody>
+                </table>
             </div>
         </div>
+
     </div>
 
     <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            // عناصر DOM
-            const licenseForm = document.getElementById('licenseForm');
-            const licenseCodeInput = document.getElementById('licenseCode');
-            const generateCodeBtn = document.getElementById('generateCodeBtn');
-            const customerNameInput = document.getElementById('customerName');
-            const customerEmailInput = document.getElementById('customerEmail');
-            const licenseTypeSelect = document.getElementById('licenseType');
-            const expiryDateInput = document.getElementById('expiryDate');
-            const notesInput = document.getElementById('notes');
-            const licensePreview = document.getElementById('licensePreview');
-            const licensesTableBody = document.getElementById('licensesTableBody');
-            const licenseModal = document.getElementById('licenseModal');
-            const modalLicenseDetails = document.getElementById('modalLicenseDetails');
-            const downloadJsonBtn = document.getElementById('downloadJsonBtn');
-            const closeModal = document.getElementById('closeModal');
-            const closeModalBtn = document.getElementById('closeModalBtn');
-            const generateLicenseBtn = document.getElementById('generateLicenseBtn');
-            const successAlert = document.getElementById('successAlert');
-            const errorAlert = document.getElementById('errorAlert');
-            const totalLicensesElement = document.getElementById('totalLicenses');
-            const activeLicensesElement = document.getElementById('activeLicenses');
-            const expiredLicensesElement = document.getElementById('expiredLicenses');
-            
-            // بيانات التطبيق
-            let licenses = JSON.parse(localStorage.getItem('licenses')) || [];
-            let currentLicense = null;
-            
-            // تهيئة التطبيق
-            initApp();
-            
-            // تهيئة التطبيق
-            function initApp() {
-                // تعيين تاريخ الانتهاء الافتراضي (سنة من الآن)
-                setDefaultExpiryDate();
-                
-                // توليد كود ترخيص افتراضي
-                generateLicenseCode();
-                
-                // عرض التراخيص الموجودة
-                renderLicensesTable();
-                
-                // تحديث الإحصائيات
-                updateStats();
-                
-                // إضافة مستمعي الأحداث
-                setupEventListeners();
+        // العناصر الرئيسية
+        const licenseCodeInput = document.getElementById('licenseCode');
+        const expiryDaysInput = document.getElementById('expiryDays');
+        const generateBtn = document.getElementById('generateBtn');
+        const buildJsonBtn = document.getElementById('buildJsonBtn');
+        const jsonOutput = document.getElementById('jsonOutput');
+        const copyJsonBtn = document.getElementById('copyJsonBtn');
+        const copyFileNameBtn = document.getElementById('copyFileNameBtn');
+        const fileNameDisplay = document.getElementById('fileNameDisplay');
+        const fileNameSpan = document.getElementById('fileName');
+        const licensesTableBody = document.getElementById('licensesTableBody');
+        const clearLicensesBtn = document.getElementById('clearLicensesBtn');
+        const copyStatusMessage = document.getElementById('copyStatusMessage'); // العنصر الجديد للرسائل
+
+        // مفتاح تخزين التراخيص في localStorage
+        const LOCAL_STORAGE_KEY = 'generated_licenses';
+        
+        /**
+         * عرض رسالة مؤقتة بدلاً من alert()
+         * @param {string} message - نص الرسالة
+         * @param {string} type - نوع الرسالة ('success' أو 'error' أو 'info')
+         */
+        function showNotification(message, type = 'info') {
+            copyStatusMessage.textContent = message;
+            copyStatusMessage.classList.remove('hidden', 'bg-red-100', 'text-red-800', 'bg-green-100', 'text-green-800', 'bg-blue-100', 'text-blue-800');
+
+            if (type === 'success') {
+                copyStatusMessage.classList.add('bg-green-100', 'text-green-800');
+            } else if (type === 'error') {
+                copyStatusMessage.classList.add('bg-red-100', 'text-red-800');
+            } else {
+                 copyStatusMessage.classList.add('bg-blue-100', 'text-blue-800');
             }
-            
-            // إعداد مستمعي الأحداث
-            function setupEventListeners() {
-                // توليد كود ترخيص
-                generateCodeBtn.addEventListener('click', generateLicenseCode);
-                
-                // تغيير نوع الترخيص
-                licenseTypeSelect.addEventListener('change', handleLicenseTypeChange);
-                
-                // تقديم النموذج
-                licenseForm.addEventListener('submit', handleFormSubmit);
-                
-                // فتح النافذة المنبثقة
-                generateLicenseBtn.addEventListener('click', function() {
-                    document.getElementById('licenseForm').scrollIntoView({ behavior: 'smooth' });
-                });
-                
-                // إغلاق النافذة المنبثقة
-                closeModal.addEventListener('click', closeLicenseModal);
-                closeModalBtn.addEventListener('click', closeLicenseModal);
-                
-                // تحميل ملف JSON
-                downloadJsonBtn.addEventListener('click', downloadJsonFile);
+
+            // إخفاء الرسالة بعد 5 ثواني
+            setTimeout(() => {
+                copyStatusMessage.classList.add('hidden');
+            }, 5000);
+        }
+
+
+        /**
+         * دالة لتوليد كود ترخيص عشوائي (8 أحرف وأرقام كبيرة)
+         */
+        function generateLicenseCode() {
+            const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+            let result = '';
+            for (let i = 0; i < 8; i++) {
+                result += characters.charAt(Math.floor(Math.random() * characters.length));
             }
-            
-            // تعيين تاريخ الانتهاء الافتراضي
-            function setDefaultExpiryDate() {
-                const today = new Date();
-                const oneYearFromNow = new Date(today);
-                oneYearFromNow.setFullYear(today.getFullYear() + 1);
-                
-                const formattedDate = oneYearFromNow.toISOString().split('T')[0];
-                expiryDateInput.value = formattedDate;
+            return result;
+        }
+
+        /**
+         * جلب قائمة التراخيص من localStorage
+         * @returns {Array} قائمة التراخيص المحفوظة
+         */
+        function getLicenses() {
+            const stored = localStorage.getItem(LOCAL_STORAGE_KEY);
+            return stored ? JSON.parse(stored) : [];
+        }
+
+        /**
+         * حفظ ترخيص جديد في localStorage
+         * @param {Object} licenseData - بيانات الترخيص الجديدة
+         */
+        function saveLicense(licenseData) {
+            const licenses = getLicenses();
+            // تأكد من عدم وجود الكود مسبقًا
+            if (!licenses.some(lic => lic.code === licenseData.code)) {
+                licenses.push(licenseData);
+                localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(licenses));
+                renderLicenses(); // إعادة عرض الجدول بعد الحفظ
             }
+        }
+
+        /**
+         * عرض التراخيص في الجدول
+         */
+        function renderLicenses() {
+            const licenses = getLicenses();
+            licensesTableBody.innerHTML = ''; // مسح المحتوى الحالي
             
-            // توليد كود ترخيص عشوائي
-            function generateLicenseCode() {
-                const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
-                let result = '';
-                for (let i = 0; i < 8; i++) {
-                    result += characters.charAt(Math.floor(Math.random() * characters.length));
-                }
-                licenseCodeInput.value = result;
-            }
-            
-            // التعامل مع تغيير نوع الترخيص
-            function handleLicenseTypeChange() {
-                const today = new Date();
-                const newDate = new Date(today);
-                
-                switch(licenseTypeSelect.value) {
-                    case 'basic':
-                        newDate.setFullYear(today.getFullYear() + 1);
-                        break;
-                    case 'professional':
-                        newDate.setFullYear(today.getFullYear() + 2);
-                        break;
-                    case 'enterprise':
-                        newDate.setFullYear(today.getFullYear() + 3);
-                        break;
-                }
-                
-                const formattedDate = newDate.toISOString().split('T')[0];
-                expiryDateInput.value = formattedDate;
-            }
-            
-            // التعامل مع تقديم النموذج
-            function handleFormSubmit(e) {
-                e.preventDefault();
-                
-                // التحقق من صحة البيانات
-                if (!customerNameInput.value.trim()) {
-                    showAlert('يرجى إدخال اسم العميل', 'error');
-                    return;
-                }
-                
-                if (!customerEmailInput.value.trim()) {
-                    showAlert('يرجى إدخال البريد الإلكتروني للعميل', 'error');
-                    return;
-                }
-                
-                // إنشاء كائن الترخيص
-                const license = {
-                    code: licenseCodeInput.value,
-                    customerName: customerNameInput.value,
-                    customerEmail: customerEmailInput.value,
-                    type: licenseTypeSelect.value,
-                    created: new Date().toISOString(),
-                    expiry: expiryDateInput.value,
-                    notes: notesInput.value,
-                    status: 'active'
-                };
-                
-                // حفظ الترخيص
-                saveLicense(license);
-                
-                // عرض النافذة المنبثقة
-                showLicenseModal(license);
-                
-                // إعادة تعيين النموذج
-                licenseForm.reset();
-                setDefaultExpiryDate();
-                generateLicenseCode();
-                
-                // تحديث الجدول والإحصائيات
-                renderLicensesTable();
-                updateStats();
-                
-                // عرض رسالة النجاح
-                showAlert('تم إنشاء الترخيص بنجاح!', 'success');
-            }
-            
-            // حفظ الترخيص
-            function saveLicense(license) {
-                licenses.push(license);
-                localStorage.setItem('licenses', JSON.stringify(licenses));
-            }
-            
-            // عرض النافذة المنبثقة للترخيص
-            function showLicenseModal(license) {
-                currentLicense = license;
-                
-                const createdDate = new Date(license.created).toLocaleDateString('ar-SA');
-                const expiryDate = new Date(license.expiry).toLocaleDateString('ar-SA');
-                
-                let typeText = '';
-                switch(license.type) {
-                    case 'basic': typeText = 'أساسي'; break;
-                    case 'professional': typeText = 'احترافي'; break;
-                    case 'enterprise': typeText = 'مؤسسي'; break;
-                }
-                
-                modalLicenseDetails.innerHTML = `
-                    <div style="margin-bottom: 15px;">
-                        <strong>كود الترخيص:</strong> 
-                        <span style="font-family: monospace; background: #f8f9fa; padding: 5px 10px; border-radius: 4px; display: inline-block; margin-top: 5px;">${license.code}</span>
-                    </div>
-                    <div style="margin-bottom: 15px;">
-                        <strong>اسم العميل:</strong> ${license.customerName}
-                    </div>
-                    <div style="margin-bottom: 15px;">
-                        <strong>البريد الإلكتروني:</strong> ${license.customerEmail}
-                    </div>
-                    <div style="margin-bottom: 15px;">
-                        <strong>نوع الترخيص:</strong> ${typeText}
-                    </div>
-                    <div style="margin-bottom: 15px;">
-                        <strong>تاريخ الإنشاء:</strong> ${createdDate}
-                    </div>
-                    <div style="margin-bottom: 15px;">
-                        <strong>تاريخ الانتهاء:</strong> ${expiryDate}
-                    </div>
-                    <div style="margin-bottom: 15px;">
-                        <strong>ملاحظات:</strong> ${license.notes || 'لا توجد ملاحظات'}
-                    </div>
-                    <div style="margin-top: 20px; padding: 15px; background: #f8f9fa; border-radius: 5px;">
-                        <strong>ملف JSON المُنشأ:</strong>
-                        <pre style="margin-top: 10px; white-space: pre-wrap; font-family: monospace; font-size: 14px;">${generateJsonContent(license)}</pre>
-                    </div>
+            if (licenses.length === 0) {
+                licensesTableBody.innerHTML = `
+                    <tr>
+                        <td colspan="4" class="text-center py-4 text-gray-500">لا توجد تراخيص محفوظة محلياً.</td>
+                    </tr>
                 `;
-                
-                licenseModal.style.display = 'flex';
+                return;
             }
-            
-            // إغلاق النافذة المنبثقة
-            function closeLicenseModal() {
-                licenseModal.style.display = 'none';
-            }
-            
-            // توليد محتوى JSON للترخيص
-            function generateJsonContent(license) {
-                const jsonObject = {
-                    code: license.code,
-                    customer: license.customerName,
-                    email: license.customerEmail,
-                    type: license.type,
-                    created: license.created,
-                    expiry: license.expiry,
-                    status: license.status
-                };
-                
-                return JSON.stringify(jsonObject, null, 2);
-            }
-            
-            // تحميل ملف JSON
-            function downloadJsonFile() {
-                if (!currentLicense) return;
-                
-                const jsonContent = generateJsonContent(currentLicense);
-                const blob = new Blob([jsonContent], { type: 'application/json' });
-                const url = URL.createObjectURL(blob);
-                
-                const a = document.createElement('a');
-                a.href = url;
-                a.download = `${currentLicense.code}.json`;
-                document.body.appendChild(a);
-                a.click();
-                document.body.removeChild(a);
-                URL.revokeObjectURL(url);
-            }
-            
-            // عرض التراخيص في الجدول
-            function renderLicensesTable() {
-                if (licenses.length === 0) {
-                    licensesTableBody.innerHTML = `
-                        <tr>
-                            <td colspan="7" style="text-align: center; padding: 30px; color: #7f8c8d;">
-                                <i class="fas fa-key" style="font-size: 48px; margin-bottom: 15px; display: block; opacity: 0.5;"></i>
-                                لا توجد تراخيص مُنشأة بعد
-                            </td>
-                        </tr>
-                    `;
-                    return;
-                }
-                
-                licensesTableBody.innerHTML = '';
-                
-                licenses.forEach(license => {
-                    const createdDate = new Date(license.created).toLocaleDateString('ar-SA');
-                    const expiryDate = new Date(license.expiry).toLocaleDateString('ar-SA');
-                    
-                    let typeText = '';
-                    let typeClass = '';
-                    
-                    switch(license.type) {
-                        case 'basic': 
-                            typeText = 'أساسي';
-                            typeClass = 'badge-warning';
-                            break;
-                        case 'professional': 
-                            typeText = 'احترافي';
-                            typeClass = 'badge-primary';
-                            break;
-                        case 'enterprise': 
-                            typeText = 'مؤسسي';
-                            typeClass = 'badge-success';
-                            break;
-                    }
-                    
-                    const isExpired = new Date(license.expiry) < new Date();
-                    const statusText = isExpired ? 'منتهي' : 'نشط';
-                    const statusClass = isExpired ? 'badge-danger' : 'badge-success';
-                    
-                    const row = document.createElement('tr');
-                    row.innerHTML = `
-                        <td>${license.code}</td>
-                        <td>${license.customerName}</td>
-                        <td><span class="badge ${typeClass}">${typeText}</span></td>
-                        <td>${createdDate}</td>
-                        <td>${expiryDate}</td>
-                        <td><span class="badge ${statusClass}">${statusText}</span></td>
-                        <td>
-                            <div class="actions">
-                                <div class="action-btn edit" onclick="viewLicense('${license.code}')">
-                                    <i class="fas fa-eye"></i>
-                                </div>
-                                <div class="action-btn delete" onclick="deleteLicense('${license.code}')">
-                                    <i class="fas fa-trash"></i>
-                                </div>
-                            </div>
-                        </td>
-                    `;
-                    
-                    licensesTableBody.appendChild(row);
+
+            // ترتيب التراخيص حسب تاريخ التوليد الأحدث
+            licenses.sort((a, b) => new Date(b.issueDate) - new Date(a.issueDate));
+
+            licenses.forEach(license => {
+                const date = new Date(license.issueDate).toLocaleDateString('ar-EG', { 
+                    year: 'numeric', month: 'short', day: 'numeric' 
                 });
-            }
-            
-            // تحديث الإحصائيات
-            function updateStats() {
-                totalLicensesElement.textContent = licenses.length;
+                const row = document.createElement('tr');
+                row.className = 'bg-white border-b hover:bg-gray-50 transition duration-150';
                 
-                const activeCount = licenses.filter(license => new Date(license.expiry) >= new Date()).length;
-                activeLicensesElement.textContent = activeCount;
-                
-                const expiredCount = licenses.filter(license => new Date(license.expiry) < new Date()).length;
-                expiredLicensesElement.textContent = expiredCount;
+                row.innerHTML = `
+                    <td data-label="كود الترخيص" class="px-6 py-4 font-bold text-center text-indigo-600">${license.code}</td>
+                    <td data-label="الصلاحية (أيام)" class="px-6 py-4">${license.days}</td>
+                    <td data-label="تاريخ التوليد" class="px-6 py-4">${date}</td>
+                    <td data-label="اسم الملف" class="px-6 py-4 font-medium text-gray-900">${license.code}.json</td>
+                `;
+                licensesTableBody.appendChild(row);
+            });
+        }
+
+        /**
+         * دالة مساعدة لنسخ النص - تم تحديثها لاستخدام document.execCommand
+         */
+        function copyText(text, button, originalText) {
+            // إنشاء عنصر textarea مؤقت
+            const textarea = document.createElement('textarea');
+            textarea.value = text;
+            
+            // جعل العنصر مخفي وغير مرئي
+            textarea.style.position = 'fixed';
+            textarea.style.top = 0;
+            textarea.style.left = 0;
+            textarea.style.opacity = 0;
+            
+            document.body.appendChild(textarea);
+            
+            // تحديد النص ونسخه
+            textarea.select();
+            let success = false;
+            try {
+                success = document.execCommand('copy');
+            } catch (err) {
+                console.error('فشل في النسخ باستخدام execCommand:', err);
             }
             
-            // عرض رسالة تنبيه
-            function showAlert(message, type) {
-                if (type === 'success') {
-                    successAlert.innerHTML = `<i class="fas fa-check-circle"></i> ${message}`;
-                    successAlert.style.display = 'block';
-                    errorAlert.style.display = 'none';
-                    
-                    setTimeout(() => {
-                        successAlert.style.display = 'none';
-                    }, 5000);
-                } else {
-                    errorAlert.innerHTML = `<i class="fas fa-exclamation-circle"></i> ${message}`;
-                    errorAlert.style.display = 'block';
-                    successAlert.style.display = 'none';
-                    
-                    setTimeout(() => {
-                        errorAlert.style.display = 'none';
-                    }, 5000);
-                }
+            // إزالة العنصر المؤقت
+            document.body.removeChild(textarea);
+
+            if (success) {
+                button.textContent = 'تم النسخ! ✅';
+                showNotification(`تم نسخ: "${originalText}" بنجاح!`, 'success');
+                setTimeout(() => {
+                    button.textContent = originalText;
+                }, 2000);
+            } else {
+                button.textContent = 'فشل النسخ ❌';
+                showNotification(`❌ فشل النسخ التلقائي. يُرجى نسخ المحتوى يدوياً من مربع النص.`, 'error');
+                setTimeout(() => {
+                    button.textContent = originalText;
+                }, 2000);
             }
-            
-            // جعل الدوال متاحة عالمياً للاستخدام في الأحداث
-            window.viewLicense = function(code) {
-                const license = licenses.find(l => l.code === code);
-                if (license) {
-                    showLicenseModal(license);
-                }
+        }
+
+        // -----------------------------------------------------------
+        // معالجة الأحداث
+        // -----------------------------------------------------------
+
+        // 1. معالجة زر توليد الكود العشوائي
+        generateBtn.addEventListener('click', () => {
+            licenseCodeInput.value = generateLicenseCode();
+            jsonOutput.textContent = 'الرجاء النقر على "تكوين ملف JSON وحفظه محليًا".';
+            copyJsonBtn.disabled = true;
+            copyFileNameBtn.disabled = true;
+            fileNameDisplay.classList.add('hidden');
+            copyStatusMessage.classList.add('hidden'); // إخفاء الرسالة
+        });
+
+        // 2. معالجة زر تكوين ملف JSON
+        buildJsonBtn.addEventListener('click', () => {
+            const code = licenseCodeInput.value.trim().toUpperCase();
+            const days = parseInt(expiryDaysInput.value, 10);
+
+            if (!code || code.length !== 8) {
+                showNotification('الرجاء توليد أو إدخال كود ترخيص صالح مكون من 8 أحرف وأرقام.', 'error');
+                return;
+            }
+
+            if (isNaN(days) || days <= 0) {
+                showNotification('الرجاء إدخال عدد صالح للأيام.', 'error');
+                return;
+            }
+
+            const issueDate = new Date().toISOString();
+
+            // محتوى ملف JSON الذي سيتم إضافته إلى Gist
+            const licenseData = {
+                license_code: code, 
+                issue_date: issueDate,
+                expiry_days: days,
+                status: "ACTIVE", 
+                // يمكنك إضافة بيانات العميل هنا إذا كنت تعرفها (مثل اسم العميل أو الشركة)
             };
             
-            window.deleteLicense = function(code) {
-                if (confirm('هل أنت متأكد من رغبتك في حذف هذا الترخيص؟')) {
-                    licenses = licenses.filter(l => l.code !== code);
-                    localStorage.setItem('licenses', JSON.stringify(licenses));
-                    renderLicensesTable();
-                    updateStats();
-                    showAlert('تم حذف الترخيص بنجاح!', 'success');
-                }
-            };
+            // عرض الكود JSON مُنسقاً
+            const formattedJson = JSON.stringify(licenseData, null, 4);
+            jsonOutput.textContent = formattedJson;
+            
+            // عرض اسم الملف
+            fileNameSpan.textContent = code;
+            fileNameDisplay.classList.remove('hidden');
+
+            // تفعيل أزرار النسخ
+            copyJsonBtn.disabled = false;
+            copyFileNameBtn.disabled = false;
+
+            // حفظ بيانات الترخيص محلياً للتتبع
+            saveLicense({
+                code: code,
+                days: days,
+                issueDate: issueDate
+            });
+            
+            // تنبيه بضرورة الرفع (تم استبدال alert)
+            showNotification(`✅ تم تكوين ملف JSON وحفظ بياناته للتتبع المحلي! \n\nالآن قم بنسخ محتوى JSON ورفعه كملف باسم ${code}.json إلى Gist الخاص بك.`, 'success');
+        });
+
+        // 3. معالجة زر نسخ JSON
+        copyJsonBtn.addEventListener('click', () => {
+            // نستخدم jsonOutput.textContent لضمان نسخ النص المنسق
+            copyText(jsonOutput.textContent, copyJsonBtn, 'نسخ محتوى JSON');
+        });
+        
+        // 4. معالجة زر نسخ اسم الملف
+        copyFileNameBtn.addEventListener('click', () => {
+            copyText(fileNameSpan.textContent + '.json', copyFileNameBtn, 'نسخ اسم الملف');
+        });
+
+        // 5. معالجة زر مسح التراخيص
+        clearLicensesBtn.addEventListener('click', () => {
+            if (window.confirm('هل أنت متأكد من مسح جميع التراخيص المحلية المحفوظة؟ لن يؤثر هذا على ملفات Gist، بل على سجل التتبع لديك فقط.')) {
+                localStorage.removeItem(LOCAL_STORAGE_KEY);
+                renderLicenses();
+                showNotification('تم مسح جميع التراخيص المحلية بنجاح.', 'info');
+            }
+        });
+
+        // بدء العملية عند تحميل الصفحة
+        document.addEventListener('DOMContentLoaded', () => {
+            licenseCodeInput.value = generateLicenseCode();
+            jsonOutput.textContent = 'انقر على "تكوين ملف JSON وحفظه محليًا" للبدء.';
+            renderLicenses();
         });
     </script>
 </body>
 </html>
+
