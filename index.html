@@ -158,7 +158,7 @@
         const DB_NAME = 'ProductDB';
         const DB_VERSION = 1;
         const STORE_NAME = 'products';
-        let db;
+        let db; // كائن قاعدة البيانات IndexedDB
         let productImageBase64 = null;
         let stream = null; 
         
@@ -177,7 +177,7 @@
         const cameraMessage = document.getElementById('cameraMessage');
         const previewIcon = document.getElementById('previewIcon');
         const loadingOverlay = document.getElementById('loadingOverlay');
-        const systemMessage = document.getElementById('systemMessage'); // عنصر الرسائل الجديد
+        const systemMessage = document.getElementById('systemMessage'); 
 
         /**
          * عرض رسالة نظام مؤقتة (نجاح أو فشل)
@@ -188,10 +188,8 @@
             
             if (isError) {
                 systemMessage.classList.add('bg-red-100', 'text-red-700');
-                console.error("رسالة خطأ للمستخدم:", message);
             } else {
                 systemMessage.classList.add('bg-green-100', 'text-green-700');
-                console.log("رسالة نجاح للمستخدم:", message);
             }
 
             // إخفاء الرسالة بعد 4 ثوانٍ
@@ -210,14 +208,21 @@
         function initDatabase() {
             loadingOverlay.classList.remove('hidden');
             return new Promise((resolve, reject) => {
+                if (!window.indexedDB) {
+                    const msg = "❌ متصفحك لا يدعم IndexedDB. لن يتم حفظ البيانات.";
+                    showSystemMessage(msg, true);
+                    loadingOverlay.classList.add('hidden');
+                    return reject(new Error(msg));
+                }
+
                 const request = indexedDB.open(DB_NAME, DB_VERSION);
 
                 request.onerror = (event) => {
-                    const msg = "فشل في فتح قاعدة البيانات المحلية. لن يتم حفظ البيانات.";
-                    console.error("❌ خطأ في فتح IndexedDB:", event.target.errorCode);
+                    const msg = "❌ خطأ في فتح قاعدة البيانات المحلية. لن يتم حفظ البيانات.";
+                    console.error("❌ خطأ في IndexedDB:", event.target.error || event.target.errorCode);
                     showSystemMessage(msg, true);
                     loadingOverlay.classList.add('hidden');
-                    reject(new Error("DB failed to open"));
+                    reject(new Error(msg));
                 };
 
                 request.onsuccess = (event) => {
@@ -230,10 +235,8 @@
                 // يتم تشغيل هذا الحدث فقط عند إنشاء القاعدة أو ترقية الإصدار
                 request.onupgradeneeded = (event) => {
                     db = event.target.result;
-                    // إنشاء مخزن الكائنات (Object Store) للأصناف
                     if (!db.objectStoreNames.contains(STORE_NAME)) {
                         const objectStore = db.createObjectStore(STORE_NAME, { keyPath: 'id', autoIncrement: true });
-                        // إنشاء فهرس للبحث باسم الصنف
                         objectStore.createIndex('name', 'name', { unique: false });
                         console.log("✅ تم إنشاء مخزن الكائنات بنجاح.");
                     }
@@ -247,23 +250,28 @@
         function getProducts() {
             return new Promise((resolve, reject) => {
                 if (!db) {
-                    console.warn("⚠️ قاعدة البيانات غير مهيأة بعد.");
+                    console.warn("⚠️ قاعدة البيانات غير مهيأة.");
                     resolve([]); 
                     return;
                 }
 
-                const transaction = db.transaction([STORE_NAME], 'readonly');
-                const objectStore = transaction.objectStore(STORE_NAME);
-                const request = objectStore.getAll();
+                try {
+                    const transaction = db.transaction([STORE_NAME], 'readonly');
+                    const objectStore = transaction.objectStore(STORE_NAME);
+                    const request = objectStore.getAll();
 
-                request.onerror = (event) => {
-                    console.error("❌ خطأ في جلب البيانات:", event.target.errorCode);
-                    reject(new Error("Failed to retrieve products"));
-                };
+                    request.onerror = (event) => {
+                        console.error("❌ خطأ في جلب البيانات:", event.target.error);
+                        reject(new Error("Failed to retrieve products"));
+                    };
 
-                request.onsuccess = (event) => {
-                    resolve(event.target.result);
-                };
+                    request.onsuccess = (event) => {
+                        resolve(event.target.result);
+                    };
+                } catch (e) {
+                    console.error("❌ خطأ أثناء إنشاء معاملة القراءة:", e);
+                    reject(e);
+                }
             });
         }
 
@@ -273,23 +281,38 @@
         function saveProduct(product) {
             return new Promise((resolve, reject) => {
                 if (!db) {
-                    reject(new Error("Database not initialized"));
-                    return;
+                    return reject(new Error("Database object is null. Initialization failed or is pending."));
                 }
+                
+                try {
+                    const transaction = db.transaction([STORE_NAME], 'readwrite');
+                    
+                    transaction.oncomplete = () => {
+                        console.log("✅ اكتملت معاملة الحفظ بنجاح.");
+                    };
+                    
+                    transaction.onerror = (event) => {
+                        console.error("❌ خطأ في معاملة الحفظ:", event.target.error);
+                        reject(event.target.error);
+                    };
 
-                const transaction = db.transaction([STORE_NAME], 'readwrite');
-                const objectStore = transaction.objectStore(STORE_NAME);
-                const request = objectStore.add(product);
+                    const objectStore = transaction.objectStore(STORE_NAME);
+                    const request = objectStore.add(product);
 
-                request.onerror = (event) => {
-                    console.error("❌ خطأ في حفظ الصنف:", event.target.error);
-                    reject(new Error("Failed to save product"));
-                };
+                    request.onsuccess = (event) => {
+                        resolve(event.target.result); // يعود بمعرف الصنف الجديد
+                    };
 
-                request.onsuccess = (event) => {
-                    console.log(`✅ تم حفظ الصنف بنجاح. ID: ${event.target.result}`);
-                    resolve(event.target.result); // يعود بمعرف الصنف الجديد
-                };
+                    request.onerror = (event) => {
+                         // سيتم التقاط هذا الخطأ بواسطة transaction.onerror
+                         // لكن نضعه هنا للتسجيل الاحتياطي
+                         console.error("❌ خطأ مباشر في طلب الإضافة:", event.target.error);
+                    };
+
+                } catch (e) {
+                    console.error("❌ خطأ أثناء إنشاء معاملة الكتابة:", e);
+                    reject(e);
+                }
             });
         }
 
@@ -299,8 +322,7 @@
         function deleteProductFromDB(id) {
             return new Promise((resolve, reject) => {
                 if (!db) {
-                    reject(new Error("Database not initialized"));
-                    return;
+                    return reject(new Error("Database not initialized"));
                 }
 
                 const transaction = db.transaction([STORE_NAME], 'readwrite');
@@ -366,6 +388,12 @@
             }
 
             const video = cameraStream;
+            // ضمان أن الفيديو يحتوي على بيانات قابلة للالتقاط
+            if (video.readyState < 2) { // 2 = HAVE_CURRENT_DATA
+                 showSystemMessage('❌ الفيديو غير جاهز للالتقاط بعد، يرجى الانتظار قليلاً.', true);
+                 return;
+            }
+
             // ضبط حجم الكانفاس لحجم الفيديو
             photoCanvas.width = video.videoWidth;
             photoCanvas.height = video.videoHeight;
@@ -421,6 +449,10 @@
             let code = productCodeInput.value.trim() || generateCode();
 
             // التحقق من صحة البيانات
+            if (!db) {
+                showSystemMessage('❌ قاعدة البيانات غير جاهزة. يرجى الانتظار أو تحديث الصفحة.', true);
+                return;
+            }
             if (name === "") {
                  showSystemMessage('❌ يرجى إدخال اسم الصنف.', true);
                  return;
@@ -460,8 +492,11 @@
                 showSystemMessage(`✅ تم حفظ الصنف "${name}" بنجاح.`);
 
             } catch (error) {
-                showSystemMessage('حدث خطأ أثناء حفظ الصنف. تحقق من سجل المتصفح (Console).', true);
-                console.error("فشل حفظ الصنف:", error);
+                // عرض رسالة الخطأ العامة وتسجيل التفاصيل في Console
+                const errorMessage = `❌ فشل حفظ الصنف "${name}". يرجى فتح Console (F12) لرؤية التفاصيل.`;
+                showSystemMessage(errorMessage, true);
+                console.error("🚨🚨 تفاصيل فشل الحفظ IndexedDB:", error); 
+                console.error("⚠️ الصنف الذي فشل حفظه:", newProduct);
             }
         }
 
@@ -494,6 +529,7 @@
                 // تصميم بطاقة الصنف (Item Card)
                 productCard.className = 'bg-white border-2 border-primary-blue/30 rounded-xl shadow-lg p-5 transition hover:shadow-xl relative overflow-hidden';
                 
+                // استخدام `product.id` الذي تولده IndexedDB لعملية الحذف
                 productCard.innerHTML = `
                     <!-- أيقونة الصورة المصغرة في الزاوية العلوية -->
                     <div class="absolute top-0 left-0 m-4">
@@ -539,7 +575,7 @@
          * التعامل مع طلب الحذف
          */
         async function handleDelete(id) {
-             // استخدام رسالة تأكيد بسيطة بدلاً من window.confirm
+             // استخدام نافذة تأكيد بسيطة (confirm)
              if (confirm('هل أنت متأكد من حذف هذا الصنف بشكل دائم؟')) {
                  try {
                      await deleteProductFromDB(id);
@@ -551,8 +587,6 @@
                  }
             }
         }
-        
-        // ** ملاحظة هامة: تم استبدال window.confirm برسالة تأكيد بسيطة (confirm) لتجنب التعقيد، ولكن في تطبيق فعلي يجب استخدام واجهة Modal UI مخصصة.**
 
         // إيقاف الكاميرا عند إغلاق الصفحة لضمان تحرير الموارد
         window.addEventListener('beforeunload', stopCamera);
@@ -563,7 +597,7 @@
                 await initDatabase();
                 await renderProducts();
             } catch (error) {
-                // سيتم عرض رسالة الخطأ عبر showSystemMessage في initDatabase
+                // إذا فشلت التهيئة، يتم التعامل معها في initDatabase
             }
         };
 
