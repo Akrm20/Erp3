@@ -58,6 +58,10 @@
             z-index: 10;
             border-radius: 0.75rem;
         }
+        /* إخفاء مؤشر الملف وجعل الزر العلوي هو المتحكم */
+        #imageFileInput {
+            cursor: pointer;
+        }
     </style>
 </head>
 <body class="bg-gray-100 p-4 font-sans antialiased min-h-screen">
@@ -130,6 +134,15 @@
                             </button>
                         </div>
                         
+                        <!-- زر اختيار الصورة من الجهاز -->
+                        <div class="relative w-full">
+                            <!-- حقل الإدخال هو العنصر الذي ينقر عليه المستخدم، لكن الزر هو الذي يظهر -->
+                            <input type="file" id="imageFileInput" accept="image/*" class="absolute inset-0 opacity-0 cursor-pointer h-full" onchange="handleFileSelect(event)">
+                            <button type="button" class="w-full py-2 rounded-lg text-white bg-green-500 hover:bg-green-600 transition pointer-events-none">
+                                اختيار صورة من الجهاز (الاستديو)
+                            </button>
+                        </div>
+
                         <!-- إظهار الصورة الملتقطة/المختارة -->
                         <div id="capturedImagePreview" class="p-3 bg-secondary-gray rounded-lg border border-primary-blue/50 flex items-center justify-between">
                             <span class="text-gray-700 font-medium">صورة الأيقونة الحالية:</span>
@@ -178,7 +191,8 @@
         const cameraMessage = document.getElementById('cameraMessage');
         const previewIcon = document.getElementById('previewIcon');
         const loadingOverlay = document.getElementById('loadingOverlay');
-        const systemMessage = document.getElementById('systemMessage'); 
+        const systemMessage = document.getElementById('systemMessage');
+        const imageFileInput = document.getElementById('imageFileInput'); 
 
         /**
          * عرض رسالة نظام مؤقتة (نجاح أو فشل)
@@ -441,6 +455,46 @@
         }
 
         /**
+         * التعامل مع اختيار ملف صورة من الجهاز
+         */
+        function handleFileSelect(event) {
+            const file = event.target.files[0];
+            if (!file) {
+                return;
+            }
+
+            // إيقاف الكاميرا إذا كانت تعمل
+            stopCamera();
+            
+            // التأكد من أن الملف صورة
+            if (!file.type.startsWith('image/')) {
+                showSystemMessage('❌ يجب أن يكون الملف المختار صورة.', true);
+                return;
+            }
+
+            const reader = new FileReader();
+
+            reader.onload = (e) => {
+                const dataUrl = e.target.result;
+                productImageBase64 = dataUrl;
+                
+                // تحديث المعاينة
+                previewIcon.src = productImageBase64;
+                imageStatus.classList.add('hidden');
+                
+                showSystemMessage('✅ تم اختيار الصورة من الجهاز بنجاح. يمكنك الآن حفظ الصنف.');
+            };
+
+            reader.onerror = (error) => {
+                console.error("❌ فشل قراءة الملف:", error);
+                showSystemMessage('❌ فشل في قراءة ملف الصورة المختارة.', true);
+            };
+
+            // قراءة الملف كـ Data URL (Base64)
+            reader.readAsDataURL(file);
+        }
+
+        /**
          * إيقاف مجرى الكاميرا
          */
         function stopCamera() {
@@ -489,7 +543,7 @@
             }
             if (!productImageBase64) {
                 imageStatus.classList.remove('hidden');
-                showSystemMessage('❌ يرجى التقاط صورة لتحديد أيقونة الصنف.', true);
+                showSystemMessage('❌ يرجى التقاط صورة أو اختيارها لتحديد أيقونة الصنف.', true);
                 return;
             }
 
@@ -511,6 +565,7 @@
                 productPriceInput.value = '';
                 productImageBase64 = null; 
                 previewIcon.src = "https://placehold.co/48x48/D1D5DB/000?text=؟";
+                imageFileInput.value = ''; // تصفير حقل الملف
                 imageStatus.classList.add('hidden');
 
                 // إعادة عرض القائمة
