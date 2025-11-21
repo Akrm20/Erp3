@@ -161,6 +161,7 @@
         let db; // كائن قاعدة البيانات IndexedDB
         let productImageBase64 = null;
         let stream = null; 
+        let isDbInitialized = false; // مؤشر لحالة تهيئة قاعدة البيانات
         
         // عناصر DOM
         const productNameInput = document.getElementById('productName');
@@ -207,7 +208,10 @@
          */
         function initDatabase() {
             loadingOverlay.classList.remove('hidden');
+            console.log('⏳ بدء تهيئة IndexedDB...');
+
             return new Promise((resolve, reject) => {
+                // فحص دعم المتصفح
                 if (!window.indexedDB) {
                     const msg = "❌ متصفحك لا يدعم IndexedDB. لن يتم حفظ البيانات.";
                     showSystemMessage(msg, true);
@@ -218,15 +222,17 @@
                 const request = indexedDB.open(DB_NAME, DB_VERSION);
 
                 request.onerror = (event) => {
-                    const msg = "❌ خطأ في فتح قاعدة البيانات المحلية. لن يتم حفظ البيانات.";
-                    console.error("❌ خطأ في IndexedDB:", event.target.error || event.target.errorCode);
+                    const error = event.target.error;
+                    const msg = "❌ فشل في فتح قاعدة البيانات المحلية. لن يتم حفظ البيانات.";
+                    console.error("🚨🚨 خطأ أثناء فتح IndexedDB:", error);
                     showSystemMessage(msg, true);
                     loadingOverlay.classList.add('hidden');
-                    reject(new Error(msg));
+                    reject(error);
                 };
 
                 request.onsuccess = (event) => {
                     db = event.target.result;
+                    isDbInitialized = true;
                     console.log("✅ تم فتح قاعدة البيانات بنجاح.");
                     loadingOverlay.classList.add('hidden');
                     resolve(db);
@@ -235,10 +241,19 @@
                 // يتم تشغيل هذا الحدث فقط عند إنشاء القاعدة أو ترقية الإصدار
                 request.onupgradeneeded = (event) => {
                     db = event.target.result;
-                    if (!db.objectStoreNames.contains(STORE_NAME)) {
-                        const objectStore = db.createObjectStore(STORE_NAME, { keyPath: 'id', autoIncrement: true });
-                        objectStore.createIndex('name', 'name', { unique: false });
-                        console.log("✅ تم إنشاء مخزن الكائنات بنجاح.");
+                    try {
+                        // إنشاء مخزن الكائنات (Object Store) للأصناف
+                        if (!db.objectStoreNames.contains(STORE_NAME)) {
+                            const objectStore = db.createObjectStore(STORE_NAME, { keyPath: 'id', autoIncrement: true });
+                            // إنشاء فهرس للبحث باسم الصنف
+                            objectStore.createIndex('name', 'name', { unique: false });
+                            console.log("✅ تم إنشاء مخزن الكائنات بنجاح.");
+                        }
+                    } catch (e) {
+                        console.error("🚨🚨 خطأ في onupgradeneeded (إنشاء المخزن):", e);
+                        // يمكن أن يفشل هذا إذا كان المتصفح في وضع التصفح المتخفي ورفض التخزين
+                        showSystemMessage('❌ فشلت عملية إعداد التخزين. قد يكون المتصفح في وضع التصفح الخاص.', true);
+                        reject(e);
                     }
                 };
             });
@@ -249,8 +264,8 @@
          */
         function getProducts() {
             return new Promise((resolve, reject) => {
-                if (!db) {
-                    console.warn("⚠️ قاعدة البيانات غير مهيأة.");
+                if (!isDbInitialized || !db) {
+                    // إذا لم يتم التهيئة بعد، افترض عدم وجود بيانات
                     resolve([]); 
                     return;
                 }
@@ -280,7 +295,7 @@
          */
         function saveProduct(product) {
             return new Promise((resolve, reject) => {
-                if (!db) {
+                if (!isDbInitialized || !db) {
                     return reject(new Error("Database object is null. Initialization failed or is pending."));
                 }
                 
@@ -292,7 +307,8 @@
                     };
                     
                     transaction.onerror = (event) => {
-                        console.error("❌ خطأ في معاملة الحفظ:", event.target.error);
+                        // هذا يلتقط معظم أخطاء القيود والتخزين
+                        console.error("🚨🚨 خطأ في معاملة الحفظ (Transaction Error):", event.target.error);
                         reject(event.target.error);
                     };
 
@@ -304,8 +320,7 @@
                     };
 
                     request.onerror = (event) => {
-                         // سيتم التقاط هذا الخطأ بواسطة transaction.onerror
-                         // لكن نضعه هنا للتسجيل الاحتياطي
+                        // هذا يلتقط أخطاء الإضافة المباشرة، ويجب أن يمررها إلى transaction.onerror
                          console.error("❌ خطأ مباشر في طلب الإضافة:", event.target.error);
                     };
 
@@ -321,7 +336,7 @@
          */
         function deleteProductFromDB(id) {
             return new Promise((resolve, reject) => {
-                if (!db) {
+                if (!isDbInitialized || !db) {
                     return reject(new Error("Database not initialized"));
                 }
 
@@ -448,11 +463,12 @@
             const price = parseFloat(productPriceInput.value);
             let code = productCodeInput.value.trim() || generateCode();
 
-            // التحقق من صحة البيانات
-            if (!db) {
-                showSystemMessage('❌ قاعدة البيانات غير جاهزة. يرجى الانتظار أو تحديث الصفحة.', true);
+            // التحقق من حالة قاعدة البيانات أولاً
+            if (!isDbInitialized || !db) {
+                showSystemMessage('❌ قاعدة البيانات غير جاهزة. يرجى الانتظار حتى يختفي شريط التحميل أو تحديث الصفحة.', true);
                 return;
             }
+            // التحقق من صحة البيانات
             if (name === "") {
                  showSystemMessage('❌ يرجى إدخال اسم الصنف.', true);
                  return;
@@ -476,7 +492,8 @@
 
             try {
                 // حفظ في IndexedDB
-                await saveProduct(newProduct);
+                const newId = await saveProduct(newProduct);
+                console.log(`✅ تم الحفظ بنجاح. معرف جديد: ${newId}`);
 
                 // تصفير الحقول ومتغيرات الصورة
                 productCodeInput.value = '';
