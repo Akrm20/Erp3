@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>إدارة الأصناف - كاميرا وبطاقة الصنف IndexedDB</title>
-    <!-- تضمين Tailwind CSS -->
+    <!-- تضمين Tailwind CSS (مع تجاهل رسالة التحذير، لأنه للاختبار) -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- تخصيص الأنماط لتشمل اللون الأساسي والخط -->
     <script>
@@ -223,8 +223,8 @@
 
                 request.onerror = (event) => {
                     const error = event.target.error;
-                    const msg = "❌ فشل في فتح قاعدة البيانات المحلية. لن يتم حفظ البيانات.";
-                    console.error("🚨🚨 خطأ أثناء فتح IndexedDB:", error);
+                    const msg = `❌ فشل في فتح قاعدة البيانات المحلية: ${error ? error.name : 'Unknown Error'}`;
+                    console.error("🚨🚨 خطأ أثناء فتح IndexedDB (request.onerror):", error);
                     showSystemMessage(msg, true);
                     loadingOverlay.classList.add('hidden');
                     reject(error);
@@ -242,17 +242,14 @@
                 request.onupgradeneeded = (event) => {
                     db = event.target.result;
                     try {
-                        // إنشاء مخزن الكائنات (Object Store) للأصناف
                         if (!db.objectStoreNames.contains(STORE_NAME)) {
                             const objectStore = db.createObjectStore(STORE_NAME, { keyPath: 'id', autoIncrement: true });
-                            // إنشاء فهرس للبحث باسم الصنف
                             objectStore.createIndex('name', 'name', { unique: false });
                             console.log("✅ تم إنشاء مخزن الكائنات بنجاح.");
                         }
                     } catch (e) {
-                        console.error("🚨🚨 خطأ في onupgradeneeded (إنشاء المخزن):", e);
-                        // يمكن أن يفشل هذا إذا كان المتصفح في وضع التصفح المتخفي ورفض التخزين
-                        showSystemMessage('❌ فشلت عملية إعداد التخزين. قد يكون المتصفح في وضع التصفح الخاص.', true);
+                        console.error("🚨🚨 خطأ في onupgradeneeded (إنشاء المخزن):", e.name, e);
+                        showSystemMessage(`❌ فشلت عملية إعداد التخزين (قد يكون المتصفح في وضع التصفح الخاص). ${e.name}`, true);
                         reject(e);
                     }
                 };
@@ -265,7 +262,6 @@
         function getProducts() {
             return new Promise((resolve, reject) => {
                 if (!isDbInitialized || !db) {
-                    // إذا لم يتم التهيئة بعد، افترض عدم وجود بيانات
                     resolve([]); 
                     return;
                 }
@@ -308,8 +304,9 @@
                     
                     transaction.onerror = (event) => {
                         // هذا يلتقط معظم أخطاء القيود والتخزين
-                        console.error("🚨🚨 خطأ في معاملة الحفظ (Transaction Error):", event.target.error);
-                        reject(event.target.error);
+                        const error = event.target.error;
+                        console.error("🚨🚨 خطأ في معاملة الحفظ (Transaction Error):", error.name, error);
+                        reject(error);
                     };
 
                     const objectStore = transaction.objectStore(STORE_NAME);
@@ -371,10 +368,20 @@
             }
 
             try {
-                // طلب الوصول إلى الكاميرا
                 cameraMessage.textContent = 'جاري طلب الوصول إلى الكاميرا...';
-                // طلب الكاميرا الخلفية على الموبايل
-                stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } }); 
+                
+                let constraints = { video: { facingMode: 'environment' } };
+                
+                try {
+                    // المحاولة الأولى: الكاميرا الخلفية (environment)
+                    stream = await navigator.mediaDevices.getUserMedia(constraints); 
+                } catch (e) {
+                    console.warn('⚠️ فشلت المحاولة الأولى (environment). تجربة الكاميرا الأمامية/العادية.');
+                    
+                    // المحاولة الثانية: أي كاميرا متاحة (true) - أكثر مرونة
+                    constraints = { video: true };
+                    stream = await navigator.mediaDevices.getUserMedia(constraints); 
+                }
                 
                 cameraStream.srcObject = stream;
                 cameraStream.classList.remove('hidden');
@@ -384,11 +391,13 @@
                 cameraMessage.textContent = 'الكاميرا جاهزة. قم بالتقاط الصورة.';
 
             } catch (error) {
-                console.error('❌ فشل الوصول إلى الكاميرا:', error);
-                cameraMessage.textContent = '❌ فشل الوصول: تأكد من منح الإذن للكاميرا.';
+                const errorName = error.name || 'UnknownError';
+                console.error(`❌ فشل الوصول إلى الكاميرا: ${errorName}`, error);
+                
+                cameraMessage.textContent = `❌ فشل الوصول (${errorName}): يرجى التأكد من منح الإذن للكاميرا.`;
                 capturePlaceholder.classList.remove('hidden');
                 cameraStream.classList.add('hidden');
-                showSystemMessage('❌ فشل الوصول إلى الكاميرا. يرجى التحقق من أذونات متصفحك.', true);
+                showSystemMessage(`❌ فشل الوصول إلى الكاميرا. الخطأ: ${errorName}`, true);
                 captureButton.disabled = true;
             }
         }
@@ -466,6 +475,7 @@
             // التحقق من حالة قاعدة البيانات أولاً
             if (!isDbInitialized || !db) {
                 showSystemMessage('❌ قاعدة البيانات غير جاهزة. يرجى الانتظار حتى يختفي شريط التحميل أو تحديث الصفحة.', true);
+                console.error("🚨🚨 فشل الحفظ: IndexedDB غير مهيأة أو تهيئتها فشلت مسبقاً.");
                 return;
             }
             // التحقق من صحة البيانات
@@ -510,10 +520,10 @@
 
             } catch (error) {
                 // عرض رسالة الخطأ العامة وتسجيل التفاصيل في Console
-                const errorMessage = `❌ فشل حفظ الصنف "${name}". يرجى فتح Console (F12) لرؤية التفاصيل.`;
+                const errorName = error ? error.name : 'UnknownError';
+                const errorMessage = `❌ فشل حفظ الصنف "${name}". خطأ: ${errorName}. يرجى فتح Console (F12) لرؤية التفاصيل الكاملة.`;
                 showSystemMessage(errorMessage, true);
-                console.error("🚨🚨 تفاصيل فشل الحفظ IndexedDB:", error); 
-                console.error("⚠️ الصنف الذي فشل حفظه:", newProduct);
+                // تفاصيل الخطأ الكاملة مسجلة بالفعل في saveProduct
             }
         }
 
@@ -543,6 +553,9 @@
 
             products.forEach(product => {
                 const productCard = document.createElement('div');
+                // إضافة معرف البيانات للمساعدة في الحذف وتجنب استخدام confirm() المحظور
+                productCard.setAttribute('data-product-id', product.id); 
+                
                 // تصميم بطاقة الصنف (Item Card)
                 productCard.className = 'bg-white border-2 border-primary-blue/30 rounded-xl shadow-lg p-5 transition hover:shadow-xl relative overflow-hidden';
                 
@@ -589,19 +602,23 @@
         }
         
         /**
-         * التعامل مع طلب الحذف
+         * التعامل مع طلب الحذف (تمت إزالة confirm() تماشياً مع قواعد البيئة)
          */
         async function handleDelete(id) {
-             // استخدام نافذة تأكيد بسيطة (confirm)
-             if (confirm('هل أنت متأكد من حذف هذا الصنف بشكل دائم؟')) {
-                 try {
-                     await deleteProductFromDB(id);
-                     await renderProducts();
-                     showSystemMessage('✅ تم حذف الصنف بنجاح.');
-                 } catch (error) {
-                     showSystemMessage('❌ فشل حذف الصنف. تحقق من سجل المتصفح.', true);
-                     console.error("فشل حذف الصنف:", error);
-                 }
+            // حذف العنصر من الواجهة الرسومية أولاً (Optimistic removal)
+            const productElement = document.querySelector(`[data-product-id="${id}"]`);
+            if (productElement) productElement.remove(); 
+            
+            try {
+                await deleteProductFromDB(id);
+                // إعادة عرض القائمة لتحديث العدد
+                await renderProducts();
+                showSystemMessage('✅ تم حذف الصنف بنجاح.');
+            } catch (error) {
+                showSystemMessage('❌ فشل حذف الصنف. تحقق من سجل المتصفح.', true);
+                console.error("فشل حذف الصنف:", error);
+                // إذا فشل الحذف، أعد إضافة البطاقة (للتطبيق الكامل، هذا يتطلب إعادة تحميل المنتج المحذوف)
+                await renderProducts();
             }
         }
 
