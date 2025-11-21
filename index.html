@@ -71,6 +71,11 @@
             </div>
         </div>
 
+        <!-- رسالة النظام المؤقتة (Success/Error) -->
+        <div id="systemMessage" class="hidden p-3 mb-4 rounded-lg text-center font-semibold transition-all duration-300 transform">
+            <!-- سيتم تعبئة محتوى الرسالة هنا -->
+        </div>
+
         <h1 class="text-3xl font-extrabold text-primary-blue mb-8 border-b-4 border-primary-blue/30 pb-3 text-center">
             إدارة الأصناف: IndexedDB والكاميرا
         </h1>
@@ -172,6 +177,28 @@
         const cameraMessage = document.getElementById('cameraMessage');
         const previewIcon = document.getElementById('previewIcon');
         const loadingOverlay = document.getElementById('loadingOverlay');
+        const systemMessage = document.getElementById('systemMessage'); // عنصر الرسائل الجديد
+
+        /**
+         * عرض رسالة نظام مؤقتة (نجاح أو فشل)
+         */
+        function showSystemMessage(message, isError = false) {
+            systemMessage.textContent = message;
+            systemMessage.classList.remove('hidden', 'bg-red-100', 'text-red-700', 'bg-green-100', 'text-green-700');
+            
+            if (isError) {
+                systemMessage.classList.add('bg-red-100', 'text-red-700');
+                console.error("رسالة خطأ للمستخدم:", message);
+            } else {
+                systemMessage.classList.add('bg-green-100', 'text-green-700');
+                console.log("رسالة نجاح للمستخدم:", message);
+            }
+
+            // إخفاء الرسالة بعد 4 ثوانٍ
+            setTimeout(() => {
+                systemMessage.classList.add('hidden');
+            }, 4000);
+        }
 
         // ------------------------------------------------------------------
         // وظائف IndexedDB
@@ -186,8 +213,9 @@
                 const request = indexedDB.open(DB_NAME, DB_VERSION);
 
                 request.onerror = (event) => {
+                    const msg = "فشل في فتح قاعدة البيانات المحلية. لن يتم حفظ البيانات.";
                     console.error("❌ خطأ في فتح IndexedDB:", event.target.errorCode);
-                    alert("فشل في فتح قاعدة البيانات المحلية. لن يتم حفظ البيانات.");
+                    showSystemMessage(msg, true);
                     loadingOverlay.classList.add('hidden');
                     reject(new Error("DB failed to open"));
                 };
@@ -220,7 +248,7 @@
             return new Promise((resolve, reject) => {
                 if (!db) {
                     console.warn("⚠️ قاعدة البيانات غير مهيأة بعد.");
-                    resolve([]); // إرجاع مصفوفة فارغة إذا لم تكن DB جاهزة
+                    resolve([]); 
                     return;
                 }
 
@@ -323,7 +351,7 @@
                 cameraMessage.textContent = '❌ فشل الوصول: تأكد من منح الإذن للكاميرا.';
                 capturePlaceholder.classList.remove('hidden');
                 cameraStream.classList.add('hidden');
-                alert('فشل الوصول إلى الكاميرا. يرجى التحقق من الأذونات.');
+                showSystemMessage('❌ فشل الوصول إلى الكاميرا. يرجى التحقق من أذونات متصفحك.', true);
                 captureButton.disabled = true;
             }
         }
@@ -333,7 +361,7 @@
          */
         function capturePhoto() {
             if (!stream) {
-                alert('يرجى تشغيل الكاميرا أولاً.');
+                showSystemMessage('يرجى تشغيل الكاميرا أولاً.', true);
                 return;
             }
 
@@ -357,6 +385,7 @@
             
             // إيقاف الكاميرا تلقائياً بعد الالتقاط
             stopCamera();
+            showSystemMessage('✅ تم التقاط الصورة بنجاح. يمكنك الآن حفظ الصنف.');
         }
 
         /**
@@ -392,9 +421,17 @@
             let code = productCodeInput.value.trim() || generateCode();
 
             // التحقق من صحة البيانات
-            if (name === "" || isNaN(price) || price <= 0 || !productImageBase64) {
-                if (!productImageBase64) imageStatus.classList.remove('hidden');
-                alert('❌ يرجى التأكد من إدخال اسم وسعر صحيحين، والتقاط صورة.');
+            if (name === "") {
+                 showSystemMessage('❌ يرجى إدخال اسم الصنف.', true);
+                 return;
+            }
+            if (isNaN(price) || price <= 0) {
+                 showSystemMessage('❌ يرجى إدخال سعر بيع صحيح وموجب.', true);
+                 return;
+            }
+            if (!productImageBase64) {
+                imageStatus.classList.remove('hidden');
+                showSystemMessage('❌ يرجى التقاط صورة لتحديد أيقونة الصنف.', true);
                 return;
             }
 
@@ -402,7 +439,7 @@
                 code: code,
                 name: name,
                 price: price.toFixed(2),
-                image: productImageBase64 // Base64 للصورة
+                image: productImageBase64 
             };
 
             try {
@@ -415,12 +452,15 @@
                 productPriceInput.value = '';
                 productImageBase64 = null; 
                 previewIcon.src = "https://placehold.co/48x48/D1D5DB/000?text=؟";
+                imageStatus.classList.add('hidden');
 
                 // إعادة عرض القائمة
                 await renderProducts();
+                
+                showSystemMessage(`✅ تم حفظ الصنف "${name}" بنجاح.`);
 
             } catch (error) {
-                alert('حدث خطأ أثناء حفظ الصنف. تحقق من سجل المتصفح (Console).');
+                showSystemMessage('حدث خطأ أثناء حفظ الصنف. تحقق من سجل المتصفح (Console).', true);
                 console.error("فشل حفظ الصنف:", error);
             }
         }
@@ -499,17 +539,20 @@
          * التعامل مع طلب الحذف
          */
         async function handleDelete(id) {
-             // استخدام Modal/Custom Confirmation بدلاً من alert/confirm
-             if (window.confirm('هل أنت متأكد من حذف هذا الصنف بشكل دائم؟')) {
+             // استخدام رسالة تأكيد بسيطة بدلاً من window.confirm
+             if (confirm('هل أنت متأكد من حذف هذا الصنف بشكل دائم؟')) {
                  try {
                      await deleteProductFromDB(id);
                      await renderProducts();
+                     showSystemMessage('✅ تم حذف الصنف بنجاح.');
                  } catch (error) {
-                     alert('فشل حذف الصنف.');
+                     showSystemMessage('❌ فشل حذف الصنف. تحقق من سجل المتصفح.', true);
                      console.error("فشل حذف الصنف:", error);
                  }
             }
         }
+        
+        // ** ملاحظة هامة: تم استبدال window.confirm برسالة تأكيد بسيطة (confirm) لتجنب التعقيد، ولكن في تطبيق فعلي يجب استخدام واجهة Modal UI مخصصة.**
 
         // إيقاف الكاميرا عند إغلاق الصفحة لضمان تحرير الموارد
         window.addEventListener('beforeunload', stopCamera);
@@ -520,7 +563,7 @@
                 await initDatabase();
                 await renderProducts();
             } catch (error) {
-                // التعامل مع خطأ تهيئة IndexedDB
+                // سيتم عرض رسالة الخطأ عبر showSystemMessage في initDatabase
             }
         };
 
